@@ -187,16 +187,37 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             switch (wmId)
             {
             case ShowToolWinCommand:
-                if (!toolWin.Create(hInst, hWnd, 2, 7, 40))
+            {
+                const std::vector<std::wstring> hints{
+                    L"Tool 1",
+                    L"Tool 2",
+                    L"Tool 3",
+                    L"Tool 4",
+                    L"Tool 5",
+                    L"Tool 6",
+                    L"Tool 7",
+                    L"Tool 8",
+                    L"Tool 9",
+                    L"Tool 10",
+                    L"Tool 11",
+                    L"Tool 12",
+                    L"Tool 13",
+                    L"Tool 14"
+                };
+
+                if (!toolWin.SetHints(hints) ||
+                    !toolWin.Create(hInst, hWnd, 2, 7, 40))
                 {
                     MessageBoxW(
                         hWnd,
-                        L"Could not create the ToolWin window.",
+                        L"Could not configure or create ToolWin.",
                         L"Error",
                         MB_OK | MB_ICONERROR
                     );
                 }
+
                 break;
+            }
             case IDM_ABOUT:
                 DialogBox(hInst, MAKEINTRESOURCE(IDD_ABOUTBOX), hWnd, About);
                 break;

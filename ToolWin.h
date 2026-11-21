@@ -1,6 +1,8 @@
 #pragma once
 
 #include <Windows.h>
+#include <string>
+#include <vector>
 
 class MyToolWinClass
 {
@@ -19,6 +21,8 @@ public:
         int buttonSize
     );
 
+    bool SetHints(const std::vector<std::wstring>& hints);
+
     void Show();
     void Close();
 
@@ -34,6 +38,17 @@ private:
         WPARAM wParam,
         LPARAM lParam
     );
+
+    static LRESULT CALLBACK ButtonProc(
+        HWND hWnd,
+        UINT message,
+        WPARAM wParam,
+        LPARAM lParam,
+        UINT_PTR subclassId,
+        DWORD_PTR referenceData
+    );
+
+    std::vector<std::wstring> buttonHints;
 
     static constexpr int FirstButtonId = 1000;
 

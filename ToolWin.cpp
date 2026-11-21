@@ -1,6 +1,9 @@
 #include "framework.h"
 #include "ToolWin.h"
 #include <string>
+#include <CommCtrl.h>
+
+#pragma comment(lib, "Comctl32.lib")
 
 namespace
 {
@@ -46,6 +49,12 @@ bool MyToolWinClass::Create(
 
     // Keep control identifiers within the WM_COMMAND range.
     if (nx > 60000 / ny)
+    {
+        return false;
+    }
+
+    if (!buttonHints.empty() &&
+        buttonHints.size() != static_cast<size_t>(nx * ny))
     {
         return false;
     }
@@ -139,9 +148,38 @@ bool MyToolWinClass::Create(
             Close();
             return false;
         }
+
+        if (!SetWindowSubclass(
+            button,
+            ButtonProc,
+            static_cast<UINT_PTR>(index),
+            reinterpret_cast<DWORD_PTR>(this)))
+        {
+            Close();
+            return false;
+        }
     }
 
     Show();
+    return true;
+}
+
+bool MyToolWinClass::SetHints(
+    const std::vector<std::wstring>& hints)
+{
+    if (window != nullptr &&
+        hints.size() != static_cast<size_t>(buttonCount))
+    {
+        return false;
+    }
+
+    buttonHints = hints;
+
+    if (window != nullptr)
+    {
+        SetWindowTextW(window, L"ToolWin");
+    }
+
     return true;
 }
 
@@ -234,4 +272,51 @@ INT_PTR CALLBACK MyToolWinClass::DialogProc(
     }
 
     return FALSE;
+}
+
+LRESULT CALLBACK MyToolWinClass::ButtonProc(
+    HWND hWnd,
+    UINT message,
+    WPARAM wParam,
+    LPARAM lParam,
+    UINT_PTR subclassId,
+    DWORD_PTR referenceData)
+{
+    auto* self = reinterpret_cast<MyToolWinClass*>(referenceData);
+
+    switch (message)
+    {
+    case WM_MOUSEMOVE:
+    {
+        const size_t index = static_cast<size_t>(subclassId);
+
+        const wchar_t* hint = L"ToolWin";
+
+        if (index < self->buttonHints.size() &&
+            !self->buttonHints[index].empty())
+        {
+            hint = self->buttonHints[index].c_str();
+        }
+
+        SetWindowTextW(self->window, hint);
+
+        TRACKMOUSEEVENT tracking{};
+        tracking.cbSize = sizeof(tracking);
+        tracking.dwFlags = TME_LEAVE;
+        tracking.hwndTrack = hWnd;
+
+        TrackMouseEvent(&tracking);
+        break;
+    }
+
+    case WM_MOUSELEAVE:
+        SetWindowTextW(self->window, L"ToolWin");
+        break;
+
+    case WM_NCDESTROY:
+        RemoveWindowSubclass(hWnd, ButtonProc, subclassId);
+        break;
+    }
+
+    return DefSubclassProc(hWnd, message, wParam, lParam);
 }
