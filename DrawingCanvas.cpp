@@ -166,6 +166,7 @@ void DrawingCanvas::DrawFigure(HDC dc, const Figure& figure)
 
     case DrawingTool::None:
         break;
+    }
 
     SelectObject(dc, oldBrush);
     SelectObject(dc, oldPen);
@@ -176,7 +177,6 @@ void DrawingCanvas::DrawFigure(HDC dc, const Figure& figure)
     }
 
     DeleteObject(pen);
-    }
 }
 
 void DrawingCanvas::Paint(HDC dc) const

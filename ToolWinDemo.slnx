@@ -3,5 +3,5 @@
     <Platform Name="x64" />
     <Platform Name="x86" />
   </Configurations>
-  <Project Path="ToolWinDemo.vcxproj" />
+  <Project Path="ToolWinDemo.vcxproj" Id="8d093be7-6598-4110-ac91-17d63d900d75" />
 </Solution>

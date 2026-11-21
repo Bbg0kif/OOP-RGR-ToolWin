@@ -1,4 +1,3 @@
-#include "framework.h"
 #include "ToolWin.h"
 #include <string>
 #include <CommCtrl.h>
