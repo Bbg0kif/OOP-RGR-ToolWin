@@ -9,6 +9,38 @@ void DrawingCanvas::SetTool(DrawingTool tool)
     currentTool = tool;
 }
 
+void DrawingCanvas::SetColor(COLORREF color)
+{
+    currentColor = color;
+}
+
+void DrawingCanvas::SetThickLine(bool enabled)
+{
+    currentLineWidth = enabled ? 3 : 1;
+}
+
+bool DrawingCanvas::ToggleFill()
+{
+    currentFill = !currentFill;
+    return currentFill;
+}
+
+void DrawingCanvas::Undo()
+{
+    Cancel();
+
+    if (!figures.empty())
+    {
+        figures.pop_back();
+    }
+}
+
+void DrawingCanvas::Clear()
+{
+    Cancel();
+    figures.clear();
+}
+
 bool DrawingCanvas::Begin(int x, int y)
 {
     if (currentTool == DrawingTool::None)
@@ -17,9 +49,12 @@ bool DrawingCanvas::Begin(int x, int y)
     }
 
     preview = Figure{
-        currentTool,
-        POINT{ x, y },
-        POINT{ x, y }
+    currentTool,
+    POINT{ x, y },
+    POINT{ x, y },
+    currentColor,
+    currentLineWidth,
+    currentFill
     };
 
     drawing = true;
@@ -58,6 +93,30 @@ bool DrawingCanvas::Cancel()
 
 void DrawingCanvas::DrawFigure(HDC dc, const Figure& figure)
 {
+    HPEN pen = CreatePen(
+        PS_SOLID,
+        figure.lineWidth,
+        figure.color
+    );
+
+    if (pen == nullptr)
+    {
+        return;
+    }
+
+    HBRUSH brush = figure.filled
+        ? CreateSolidBrush(figure.color)
+        : static_cast<HBRUSH>(GetStockObject(HOLLOW_BRUSH));
+
+    if (brush == nullptr)
+    {
+        DeleteObject(pen);
+        return;
+    }
+
+    HGDIOBJ oldPen = SelectObject(dc, pen);
+    HGDIOBJ oldBrush = SelectObject(dc, brush);
+
     const int left =
         (std::min)(figure.start.x, figure.end.x);
 
@@ -107,24 +166,21 @@ void DrawingCanvas::DrawFigure(HDC dc, const Figure& figure)
 
     case DrawingTool::None:
         break;
+
+    SelectObject(dc, oldBrush);
+    SelectObject(dc, oldPen);
+
+    if (figure.filled)
+    {
+        DeleteObject(brush);
+    }
+
+    DeleteObject(pen);
     }
 }
 
 void DrawingCanvas::Paint(HDC dc) const
 {
-    HGDIOBJ oldPen = SelectObject(
-        dc,
-        GetStockObject(DC_PEN)
-    );
-
-    HGDIOBJ oldBrush = SelectObject(
-        dc,
-        GetStockObject(HOLLOW_BRUSH)
-    );
-
-    const COLORREF oldColor =
-        SetDCPenColor(dc, RGB(30, 30, 30));
-
     for (const Figure& figure : figures)
     {
         DrawFigure(dc, figure);
@@ -132,11 +188,6 @@ void DrawingCanvas::Paint(HDC dc) const
 
     if (drawing)
     {
-        SetDCPenColor(dc, RGB(0, 120, 215));
         DrawFigure(dc, preview);
     }
-
-    SetDCPenColor(dc, oldColor);
-    SelectObject(dc, oldBrush);
-    SelectObject(dc, oldPen);
 }

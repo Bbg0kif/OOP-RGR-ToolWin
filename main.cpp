@@ -61,16 +61,79 @@ namespace
                 return;
             }
 
-            const std::wstring message =
-                std::wstring(L"Selected button: ") +
-                std::to_wstring(buttonIndex + 1);
+            const wchar_t* status = nullptr;
 
-            MessageBoxW(
-                GetHandle(),
-                message.c_str(),
-                L"Tool action",
-                MB_OK | MB_ICONINFORMATION
-            );
+            switch (buttonIndex)
+            {
+            case 4:
+                canvas.SetColor(RGB(30, 30, 30));
+                status = L"ToolWinDemo - Color: black";
+                break;
+
+            case 5:
+                canvas.SetColor(RGB(210, 40, 40));
+                status = L"ToolWinDemo - Color: red";
+                break;
+
+            case 6:
+                canvas.SetColor(RGB(30, 150, 70));
+                status = L"ToolWinDemo - Color: green";
+                break;
+
+            case 7:
+                canvas.SetColor(RGB(35, 90, 210));
+                status = L"ToolWinDemo - Color: blue";
+                break;
+
+            case 8:
+                canvas.SetThickLine(false);
+                status = L"ToolWinDemo - Line width: 1";
+                break;
+
+            case 9:
+                canvas.SetThickLine(true);
+                status = L"ToolWinDemo - Line width: 3";
+                break;
+
+            case 10:
+                status = canvas.ToggleFill()
+                    ? L"ToolWinDemo - Fill: on"
+                    : L"ToolWinDemo - Fill: off";
+                break;
+
+            case 11:
+                canvas.Undo();
+                status = L"ToolWinDemo - Undo";
+                break;
+
+            case 12:
+                canvas.Clear();
+                status = L"ToolWinDemo - Canvas cleared";
+                break;
+
+            case 13:
+                MessageBoxW(
+                    GetHandle(),
+                    L"Select a drawing tool, then drag with the "
+                    L"left mouse button in the main window.\n\n"
+                    L"Press Esc while drawing to cancel.\n"
+                    L"Colors, width and fill affect new figures.\n"
+                    L"Fill applies to rectangles and ellipses.\n\n"
+                    L"Use the Tools menu to change the panel layout "
+                    L"and button size.",
+                    L"ToolWin help",
+                    MB_OK | MB_ICONINFORMATION
+                );
+                return;
+
+            default:
+                return;
+            }
+
+            HWND mainWindow = GetParent(GetHandle());
+
+            SetWindowTextW(mainWindow, status);
+            InvalidateRect(mainWindow, nullptr, FALSE);
         }
     };
 
@@ -305,16 +368,16 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                     L"Draw line",
                     L"Draw rectangle",
                     L"Draw ellipse",
-                    L"Tool 5",
-                    L"Tool 6",
-                    L"Tool 7",
-                    L"Tool 8",
-                    L"Tool 9",
-                    L"Tool 10",
-                    L"Tool 11",
-                    L"Tool 12",
-                    L"Tool 13",
-                    L"Tool 14"
+                    L"Black color",
+                    L"Red color",
+                    L"Green color",
+                    L"Blue color",
+                    L"Thin line",
+                    L"Thick line",
+                    L"Toggle fill",
+                    L"Undo last figure",
+                    L"Clear canvas",
+                    L"Help"
                 };
 
                 if (!toolWin.SetHints(hints) ||
