@@ -10,6 +10,17 @@
 namespace
 {
     constexpr UINT ShowToolWinCommand = 40001;
+    constexpr UINT Layout2x7Command = 40002;
+    constexpr UINT Layout1x14Command = 40003;
+    constexpr UINT Layout14x1Command = 40004;
+
+    constexpr UINT SmallButtonsCommand = 40005;
+    constexpr UINT MediumButtonsCommand = 40006;
+    constexpr UINT LargeButtonsCommand = 40007;
+
+    int toolColumns = 2;
+    int toolRows = 7;
+    int toolButtonSize = 40;
 
     class DemoToolWin final : public MyToolWinClass
     {
@@ -176,6 +187,40 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             L"Show ToolWin"
         );
 
+        AppendMenuW(toolsMenu, MF_SEPARATOR, 0, nullptr);
+
+        AppendMenuW(
+            toolsMenu, MF_STRING,
+            Layout2x7Command, L"Layout: 2 x 7"
+        );
+
+        AppendMenuW(
+            toolsMenu, MF_STRING,
+            Layout1x14Command, L"Layout: 1 x 14"
+        );
+
+        AppendMenuW(
+            toolsMenu, MF_STRING,
+            Layout14x1Command, L"Layout: 14 x 1"
+        );
+
+        AppendMenuW(toolsMenu, MF_SEPARATOR, 0, nullptr);
+
+        AppendMenuW(
+            toolsMenu, MF_STRING,
+            SmallButtonsCommand, L"Button size: 32"
+        );
+
+        AppendMenuW(
+            toolsMenu, MF_STRING,
+            MediumButtonsCommand, L"Button size: 40"
+        );
+
+        AppendMenuW(
+            toolsMenu, MF_STRING,
+            LargeButtonsCommand, L"Button size: 48"
+        );
+
         InsertMenuW(
             GetMenu(hWnd),
             1,
@@ -244,7 +289,12 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                 };
 
                 if (!toolWin.SetHints(hints) ||
-                    !toolWin.Create(hInst, hWnd, 2, 7, 40))
+                    !toolWin.Create(
+                        hInst,
+                        hWnd,
+                        toolColumns,
+                        toolRows,
+                        toolButtonSize))
                 {
                     MessageBoxW(
                         hWnd,
@@ -256,6 +306,74 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
                 break;
             }
+
+            case Layout2x7Command:
+            case Layout1x14Command:
+            case Layout14x1Command:
+            case SmallButtonsCommand:
+            case MediumButtonsCommand:
+            case LargeButtonsCommand:
+            {
+                switch (wmId)
+                {
+                case Layout2x7Command:
+                    toolColumns = 2;
+                    toolRows = 7;
+                    break;
+
+                case Layout1x14Command:
+                    toolColumns = 1;
+                    toolRows = 14;
+                    break;
+
+                case Layout14x1Command:
+                    toolColumns = 14;
+                    toolRows = 1;
+                    break;
+
+                case SmallButtonsCommand:
+                    toolButtonSize = 32;
+                    break;
+
+                case MediumButtonsCommand:
+                    toolButtonSize = 40;
+                    break;
+
+                case LargeButtonsCommand:
+                    toolButtonSize = 48;
+                    break;
+                }
+
+                RECT previousRect{};
+                const bool hadWindow =
+                    toolWin.GetHandle() != nullptr &&
+                    GetWindowRect(toolWin.GetHandle(), &previousRect);
+
+                toolWin.Close();
+
+                SendMessageW(
+                    hWnd,
+                    WM_COMMAND,
+                    MAKEWPARAM(ShowToolWinCommand, 0),
+                    0
+                );
+
+                if (hadWindow && toolWin.GetHandle() != nullptr)
+                {
+                    SetWindowPos(
+                        toolWin.GetHandle(),
+                        nullptr,
+                        previousRect.left,
+                        previousRect.top,
+                        0,
+                        0,
+                        SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE
+                    );
+                }
+
+                break;
+            }
+
             case IDM_ABOUT:
                 DialogBox(hInst, MAKEINTRESOURCE(IDD_ABOUTBOX), hWnd, About);
                 break;
