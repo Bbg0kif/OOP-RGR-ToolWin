@@ -4,6 +4,7 @@
 #include "framework.h"
 #include "ToolWinDemo.h"
 #include "ToolWin.h"
+#include <string>
 
 namespace
 {
@@ -14,8 +15,16 @@ namespace
     protected:
         void OnToolClick(int buttonIndex) override
         {
-            // Tool actions will be added with the buttons.
-            (void)buttonIndex;
+            const std::wstring message =
+                std::wstring(L"Selected button: ") +
+                std::to_wstring(buttonIndex + 1);
+
+            MessageBoxW(
+                GetHandle(),
+                message.c_str(),
+                L"Tool action",
+                MB_OK | MB_ICONINFORMATION
+            );
         }
     };
 

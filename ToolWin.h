@@ -35,5 +35,8 @@ private:
         LPARAM lParam
     );
 
+    static constexpr int FirstButtonId = 1000;
+
     HWND window = nullptr;
+    int buttonCount = 0;
 };

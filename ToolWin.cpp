@@ -1,5 +1,6 @@
 #include "framework.h"
 #include "ToolWin.h"
+#include <string>
 
 namespace
 {
@@ -39,6 +40,12 @@ bool MyToolWinClass::Create(
 
     if (nx > 16000 / buttonSize ||
         ny > 16000 / buttonSize)
+    {
+        return false;
+    }
+
+    // Keep control identifiers within the WM_COMMAND range.
+    if (nx > 60000 / ny)
     {
         return false;
     }
@@ -99,6 +106,39 @@ bool MyToolWinClass::Create(
     {
         Close();
         return false;
+    }
+
+    buttonCount = nx * ny;
+
+    for (int index = 0; index < buttonCount; ++index)
+    {
+        const int column = index % nx;
+        const int row = index / nx;
+
+        const std::wstring text = std::to_wstring(index + 1);
+
+        HWND button = CreateWindowExW(
+            0,
+            L"BUTTON",
+            text.c_str(),
+            WS_CHILD | WS_VISIBLE | WS_TABSTOP | BS_PUSHBUTTON,
+            column * buttonSize,
+            row * buttonSize,
+            buttonSize,
+            buttonSize,
+            window,
+            reinterpret_cast<HMENU>(
+                static_cast<INT_PTR>(FirstButtonId + index)
+                ),
+            instance,
+            nullptr
+        );
+
+        if (button == nullptr)
+        {
+            Close();
+            return false;
+        }
     }
 
     Show();
@@ -163,15 +203,32 @@ INT_PTR CALLBACK MyToolWinClass::DialogProc(
         return TRUE;
 
     case WM_COMMAND:
-        if (LOWORD(wParam) == IDCANCEL)
+    {
+        const int commandId = LOWORD(wParam);
+
+        if (commandId == IDCANCEL)
         {
             self->Close();
             return TRUE;
         }
+
+        const int buttonIndex = commandId - FirstButtonId;
+
+        if (lParam != 0 &&
+            HIWORD(wParam) == BN_CLICKED &&
+            buttonIndex >= 0 &&
+            buttonIndex < self->buttonCount)
+        {
+            self->OnToolClick(buttonIndex);
+            return TRUE;
+        }
+
         break;
+    }
 
     case WM_NCDESTROY:
         self->window = nullptr;
+        self->buttonCount = 0;
         SetWindowLongPtrW(hDlg, DWLP_USER, 0);
         return FALSE;
     }
