@@ -4,6 +4,7 @@
 #include "framework.h"
 #include "ToolWinDemo.h"
 #include "ToolWin.h"
+#include "ToolImages.h"
 #include <string>
 
 namespace
@@ -33,6 +34,7 @@ namespace
         }
     };
 
+    ToolImages toolImages;
     DemoToolWin toolWin;
 }
 
@@ -193,6 +195,37 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             {
             case ShowToolWinCommand:
             {
+                if (toolWin.GetHandle() != nullptr)
+                {
+                    toolWin.Show();
+                    break;
+                }
+
+                if (toolImages.GetImages().empty())
+                {
+                    if (!toolImages.Create(14, 28))
+                    {
+                        MessageBoxW(
+                            hWnd,
+                            L"Could not create tool images.",
+                            L"Error",
+                            MB_OK | MB_ICONERROR
+                        );
+                        break;
+                    }
+                }
+
+                if (!toolWin.SetImages(toolImages.GetImages()))
+                {
+                    MessageBoxW(
+                        hWnd,
+                        L"Could not configure tool images.",
+                        L"Error",
+                        MB_OK | MB_ICONERROR
+                    );
+                    break;
+                }
+
                 const std::vector<std::wstring> hints{
                     L"Tool 1",
                     L"Tool 2",

@@ -23,6 +23,8 @@ public:
 
     bool SetHints(const std::vector<std::wstring>& hints);
 
+    bool SetImages(const std::vector<HBITMAP>& images);
+
     bool SetModeButtons(const std::vector<int>& indices);
 
     void Show();
@@ -57,6 +59,9 @@ private:
     int selectedMode = -1;
 
     std::vector<std::wstring> buttonHints;
+
+    // Borrowed handles: the caller owns the bitmap objects.
+    std::vector<HBITMAP> buttonImages;
 
     static constexpr int FirstButtonId = 1000;
 

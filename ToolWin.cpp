@@ -68,6 +68,12 @@ bool MyToolWinClass::Create(
         }
     }
 
+    if (!buttonImages.empty() &&
+        buttonImages.size() != static_cast<size_t>(nx * ny))
+    {
+        return false;
+    }
+
     EmptyDialogTemplate dialogTemplate{};
 
     dialogTemplate.dialog.style =
@@ -135,10 +141,15 @@ bool MyToolWinClass::Create(
 
         const std::wstring text = std::to_wstring(index + 1);
 
-        const DWORD buttonStyle =
+        DWORD buttonStyle =
             IsModeButton(index)
             ? (BS_RADIOBUTTON | BS_PUSHLIKE)
             : BS_PUSHBUTTON;
+
+        if (!buttonImages.empty())
+        {
+            buttonStyle |= BS_BITMAP;
+        }
 
         HWND button = CreateWindowExW(
             0,
@@ -161,6 +172,16 @@ bool MyToolWinClass::Create(
         {
             Close();
             return false;
+        }
+
+        if (!buttonImages.empty())
+        {
+            SendMessageW(
+                button,
+                BM_SETIMAGE,
+                IMAGE_BITMAP,
+                reinterpret_cast<LPARAM>(buttonImages[index])
+            );
         }
 
         if (!SetWindowSubclass(
@@ -252,6 +273,28 @@ void MyToolWinClass::UpdateModeButtons()
             0
         );
     }
+}
+
+bool MyToolWinClass::SetImages(
+    const std::vector<HBITMAP>& images)
+{
+    // Configure images before creating the dialog.
+    if (window != nullptr)
+    {
+        return false;
+    }
+
+    for (HBITMAP bitmap : images)
+    {
+        if (bitmap == nullptr ||
+            GetObjectType(bitmap) != OBJ_BITMAP)
+        {
+            return false;
+        }
+    }
+
+    buttonImages = images;
+    return true;
 }
 
 void MyToolWinClass::Show()
