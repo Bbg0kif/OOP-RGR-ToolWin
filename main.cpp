@@ -6,6 +6,8 @@
 #include "ToolWin.h"
 #include "ToolImages.h"
 #include <string>
+#include "DrawingCanvas.h"
+#include <windowsx.h>
 
 namespace
 {
@@ -22,6 +24,8 @@ namespace
     int toolRows = 7;
     int toolButtonSize = 40;
 
+    DrawingCanvas canvas;
+
     class DemoToolWin final : public MyToolWinClass
     {
     public:
@@ -32,6 +36,31 @@ namespace
     protected:
         void OnToolClick(int buttonIndex) override
         {
+            const DrawingTool tools[]{
+                DrawingTool::Point,
+                DrawingTool::Line,
+                DrawingTool::Rectangle,
+                DrawingTool::Ellipse
+            };
+
+            const wchar_t* titles[]{
+                L"ToolWinDemo - Point",
+                L"ToolWinDemo - Line",
+                L"ToolWinDemo - Rectangle",
+                L"ToolWinDemo - Ellipse"
+            };
+
+            if (buttonIndex >= 0 && buttonIndex < 4)
+            {
+                canvas.SetTool(tools[buttonIndex]);
+
+                HWND mainWindow = GetParent(GetHandle());
+
+                SetWindowTextW(mainWindow, titles[buttonIndex]);
+                InvalidateRect(mainWindow, nullptr, FALSE);
+                return;
+            }
+
             const std::wstring message =
                 std::wstring(L"Selected button: ") +
                 std::to_wstring(buttonIndex + 1);
@@ -272,10 +301,10 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                 }
 
                 const std::vector<std::wstring> hints{
-                    L"Tool 1",
-                    L"Tool 2",
-                    L"Tool 3",
-                    L"Tool 4",
+                    L"Draw point",
+                    L"Draw line",
+                    L"Draw rectangle",
+                    L"Draw ellipse",
                     L"Tool 5",
                     L"Tool 6",
                     L"Tool 7",
@@ -385,14 +414,90 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             }
         }
         break;
-    case WM_PAINT:
+    case WM_LBUTTONDOWN:
+        if (canvas.Begin(
+            GET_X_LPARAM(lParam),
+            GET_Y_LPARAM(lParam)))
         {
-            PAINTSTRUCT ps;
-            BeginPaint(hWnd, &ps);
-            // TODO: Add any drawing code here...
-            EndPaint(hWnd, &ps);
+            SetCapture(hWnd);
+            InvalidateRect(hWnd, nullptr, FALSE);
+        }
+        return 0;
+
+    case WM_MOUSEMOVE:
+        if (canvas.Update(
+            GET_X_LPARAM(lParam),
+            GET_Y_LPARAM(lParam)))
+        {
+            InvalidateRect(hWnd, nullptr, FALSE);
+        }
+        return 0;
+
+    case WM_LBUTTONUP:
+        if (canvas.End(
+            GET_X_LPARAM(lParam),
+            GET_Y_LPARAM(lParam)))
+        {
+            if (GetCapture() == hWnd)
+            {
+                ReleaseCapture();
+            }
+
+            InvalidateRect(hWnd, nullptr, FALSE);
+        }
+        return 0;
+
+    case WM_KEYDOWN:
+        if (wParam == VK_ESCAPE)
+        {
+            if (canvas.Cancel())
+            {
+                if (GetCapture() == hWnd)
+                {
+                    ReleaseCapture();
+                }
+
+                InvalidateRect(hWnd, nullptr, FALSE);
+            }
+
+            return 0;
         }
         break;
+
+    case WM_CAPTURECHANGED:
+        if (canvas.Cancel())
+        {
+            InvalidateRect(hWnd, nullptr, FALSE);
+        }
+        return 0;
+
+    case WM_CANCELMODE:
+        if (canvas.Cancel())
+        {
+            InvalidateRect(hWnd, nullptr, FALSE);
+        }
+
+        if (GetCapture() == hWnd)
+        {
+            ReleaseCapture();
+        }
+        return 0;
+    case WM_PAINT:
+    {
+        PAINTSTRUCT ps{};
+        HDC dc = BeginPaint(hWnd, &ps);
+
+        FillRect(
+            dc,
+            &ps.rcPaint,
+            static_cast<HBRUSH>(GetStockObject(WHITE_BRUSH))
+        );
+
+        canvas.Paint(dc);
+
+        EndPaint(hWnd, &ps);
+        return 0;
+    }
     case WM_DESTROY:
         toolWin.Close();
         PostQuitMessage(0);
