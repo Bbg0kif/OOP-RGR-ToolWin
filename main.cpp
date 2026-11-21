@@ -12,6 +12,11 @@ namespace
 
     class DemoToolWin final : public MyToolWinClass
     {
+    public:
+        DemoToolWin()
+        {
+            SetModeButtons({ 0, 1, 2, 3 });
+        }
     protected:
         void OnToolClick(int buttonIndex) override
         {

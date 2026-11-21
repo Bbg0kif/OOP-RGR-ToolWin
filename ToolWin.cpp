@@ -2,6 +2,7 @@
 #include "ToolWin.h"
 #include <string>
 #include <CommCtrl.h>
+#include <algorithm>
 
 #pragma comment(lib, "Comctl32.lib")
 
@@ -57,6 +58,14 @@ bool MyToolWinClass::Create(
         buttonHints.size() != static_cast<size_t>(nx * ny))
     {
         return false;
+    }
+
+    for (int index : modeButtons)
+    {
+        if (index >= nx * ny)
+        {
+            return false;
+        }
     }
 
     EmptyDialogTemplate dialogTemplate{};
@@ -126,11 +135,16 @@ bool MyToolWinClass::Create(
 
         const std::wstring text = std::to_wstring(index + 1);
 
+        const DWORD buttonStyle =
+            IsModeButton(index)
+            ? (BS_RADIOBUTTON | BS_PUSHLIKE)
+            : BS_PUSHBUTTON;
+
         HWND button = CreateWindowExW(
             0,
             L"BUTTON",
             text.c_str(),
-            WS_CHILD | WS_VISIBLE | WS_TABSTOP | BS_PUSHBUTTON,
+            WS_CHILD | WS_VISIBLE | WS_TABSTOP | buttonStyle,
             column * buttonSize,
             row * buttonSize,
             buttonSize,
@@ -160,6 +174,7 @@ bool MyToolWinClass::Create(
         }
     }
 
+    UpdateModeButtons();
     Show();
     return true;
 }
@@ -181,6 +196,62 @@ bool MyToolWinClass::SetHints(
     }
 
     return true;
+}
+
+bool MyToolWinClass::SetModeButtons(
+    const std::vector<int>& indices)
+{
+    // Configure button types before creating the dialog.
+    if (window != nullptr)
+    {
+        return false;
+    }
+
+    for (int index : indices)
+    {
+        if (index < 0)
+        {
+            return false;
+        }
+    }
+
+    modeButtons = indices;
+
+    if (!IsModeButton(selectedMode))
+    {
+        selectedMode = -1;
+    }
+
+    return true;
+}
+
+bool MyToolWinClass::IsModeButton(int index) const
+{
+    return std::find(
+        modeButtons.begin(),
+        modeButtons.end(),
+        index
+    ) != modeButtons.end();
+}
+
+void MyToolWinClass::UpdateModeButtons()
+{
+    if (window == nullptr)
+    {
+        return;
+    }
+
+    for (int index : modeButtons)
+    {
+        HWND button = GetDlgItem(window, FirstButtonId + index);
+
+        SendMessageW(
+            button,
+            BM_SETCHECK,
+            index == selectedMode ? BST_CHECKED : BST_UNCHECKED,
+            0
+        );
+    }
 }
 
 void MyToolWinClass::Show()
@@ -257,6 +328,12 @@ INT_PTR CALLBACK MyToolWinClass::DialogProc(
             buttonIndex >= 0 &&
             buttonIndex < self->buttonCount)
         {
+            if (self->IsModeButton(buttonIndex))
+            {
+                self->selectedMode = buttonIndex;
+                self->UpdateModeButtons();
+            }
+
             self->OnToolClick(buttonIndex);
             return TRUE;
         }

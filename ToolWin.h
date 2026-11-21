@@ -23,6 +23,8 @@ public:
 
     bool SetHints(const std::vector<std::wstring>& hints);
 
+    bool SetModeButtons(const std::vector<int>& indices);
+
     void Show();
     void Close();
 
@@ -47,6 +49,12 @@ private:
         UINT_PTR subclassId,
         DWORD_PTR referenceData
     );
+
+    bool IsModeButton(int index) const;
+    void UpdateModeButtons();
+
+    std::vector<int> modeButtons;
+    int selectedMode = -1;
 
     std::vector<std::wstring> buttonHints;
 
