@@ -11,6 +11,14 @@ public:
     MyToolWinClass(const MyToolWinClass&) = delete;
     MyToolWinClass& operator=(const MyToolWinClass&) = delete;
 
+    bool Create(
+        HINSTANCE instance,
+        HWND owner,
+        int nx,
+        int ny,
+        int buttonSize
+    );
+
     void Show();
     void Close();
 
@@ -20,5 +28,12 @@ protected:
     virtual void OnToolClick(int buttonIndex) = 0;
 
 private:
+    static INT_PTR CALLBACK DialogProc(
+        HWND hDlg,
+        UINT message,
+        WPARAM wParam,
+        LPARAM lParam
+    );
+
     HWND window = nullptr;
 };

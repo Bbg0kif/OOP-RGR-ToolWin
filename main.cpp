@@ -3,6 +3,24 @@
 
 #include "framework.h"
 #include "ToolWinDemo.h"
+#include "ToolWin.h"
+
+namespace
+{
+    constexpr UINT ShowToolWinCommand = 40001;
+
+    class DemoToolWin final : public MyToolWinClass
+    {
+    protected:
+        void OnToolClick(int buttonIndex) override
+        {
+            // Tool actions will be added with the buttons.
+            (void)buttonIndex;
+        }
+    };
+
+    DemoToolWin toolWin;
+}
 
 #define MAX_LOADSTRING 100
 
@@ -45,6 +63,12 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
     // Main message loop:
     while (GetMessage(&msg, nullptr, 0, 0))
     {
+        if (toolWin.GetHandle() != nullptr &&
+            IsDialogMessageW(toolWin.GetHandle(), &msg))
+        {
+            continue;
+        }
+
         if (!TranslateAccelerator(msg.hwnd, hAccelTable, &msg))
         {
             TranslateMessage(&msg);
@@ -125,12 +149,45 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
     switch (message)
     {
+    case WM_CREATE:
+    {
+        HMENU toolsMenu = CreatePopupMenu();
+
+        AppendMenuW(
+            toolsMenu,
+            MF_STRING,
+            ShowToolWinCommand,
+            L"Show ToolWin"
+        );
+
+        InsertMenuW(
+            GetMenu(hWnd),
+            1,
+            MF_BYPOSITION | MF_POPUP,
+            reinterpret_cast<UINT_PTR>(toolsMenu),
+            L"&Tools"
+        );
+
+        DrawMenuBar(hWnd);
+        return 0;
+    }
     case WM_COMMAND:
         {
             int wmId = LOWORD(wParam);
             // Parse the menu selections:
             switch (wmId)
             {
+            case ShowToolWinCommand:
+                if (!toolWin.Create(hInst, hWnd, 2, 7, 40))
+                {
+                    MessageBoxW(
+                        hWnd,
+                        L"Could not create the ToolWin window.",
+                        L"Error",
+                        MB_OK | MB_ICONERROR
+                    );
+                }
+                break;
             case IDM_ABOUT:
                 DialogBox(hInst, MAKEINTRESOURCE(IDD_ABOUTBOX), hWnd, About);
                 break;
@@ -151,6 +208,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         }
         break;
     case WM_DESTROY:
+        toolWin.Close();
         PostQuitMessage(0);
         break;
     default:
